@@ -53,7 +53,7 @@ where
     P: AsRef<std::path::Path> + std::fmt::Debug,
     E: AsRef<str>,
 {
-    fn spirv(&self) -> Result<std::borrow::Cow<'static, [u8]>, failure::Error> {
+    fn spirv(&self) -> Result<std::borrow::Cow<'static, [u32]>, failure::Error> {
         let code = std::fs::read_to_string(&self.path)?;
 
         let artifact = shaderc::Compiler::new()
@@ -77,7 +77,16 @@ where
                 .as_ref(),
             )?;
 
-        Ok(std::borrow::Cow::Owned(artifact.as_binary_u8().into()))
+        let slice = artifact.as_binary_u8();
+        if slice.len() % 4 != 0 {
+            failure::bail!("Resuling spirv code size must be multiple of 4");
+        }
+        unsafe {
+            let mut spirv_u32s: Vec<u32> = Vec::with_capacity(slice.len() / 4);
+            spirv_u32s.set_len(slice.len() / 4);
+            std::slice::from_raw_parts_mut(spirv_u32s.as_mut_ptr() as *mut _, slice.len()).copy_from_slice(slice);
+            Ok(std::borrow::Cow::Owned(spirv_u32s))
+        }
     }
 
     fn entry(&self) -> &str {
@@ -136,7 +145,7 @@ impl<P, E, S> Shader for SourceCodeShaderInfo<P, E, S>
         E: AsRef<str>,
         S: AsRef<str> + std::fmt::Debug,
 {
-    fn spirv(&self) -> Result<std::borrow::Cow<'static, [u8]>, failure::Error> {
+    fn spirv(&self) -> Result<std::borrow::Cow<'static, [u32]>, failure::Error> {
         let artifact = shaderc::Compiler::new()
             .ok_or_else(|| failure::format_err!("Failed to init Shaderc"))?
             .compile_into_spirv(
@@ -158,7 +167,16 @@ impl<P, E, S> Shader for SourceCodeShaderInfo<P, E, S>
                     .as_ref(),
             )?;
 
-        Ok(std::borrow::Cow::Owned(artifact.as_binary_u8().into()))
+        let slice = artifact.as_binary_u8();
+        if slice.len() % 4 != 0 {
+            failure::bail!("Resuling spirv code size must be multiple of 4");
+        }
+        unsafe {
+            let mut spirv_u32s: Vec<u32> = Vec::with_capacity(slice.len() / 4);
+            spirv_u32s.set_len(slice.len() / 4);
+            std::slice::from_raw_parts_mut(spirv_u32s.as_mut_ptr() as *mut _, slice.len()).copy_from_slice(slice);
+            Ok(std::borrow::Cow::Owned(spirv_u32s))
+        }
     }
 
     fn entry(&self) -> &str {

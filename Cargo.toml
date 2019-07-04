@@ -15,4 +15,16 @@ members = [
     "graph",
     "util",
     "texture",
+    "examples",
 ]
+
+[patch.crates-io]
+gfx-hal = { path = "../gfx/src/hal" }
+gfx-backend-dx12 = { path = "../gfx/src/backend/dx12" }
+gfx-backend-empty = { path = "../gfx/src/backend/empty" }
+gfx-backend-gl = { path = "../gfx/src/backend/gl" }
+gfx-backend-metal = { path = "../gfx/src/backend/metal" }
+gfx-backend-vulkan = { path = "../gfx/src/backend/vulkan" }
+spirv_cross = { path = "../spirv_cross/spirv_cross" }
+shaderc = { path = "../shaderc-rs/shaderc-rs" }
+cc = { path = "../cc-rs" }

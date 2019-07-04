@@ -12,7 +12,7 @@ use {
         },
         graph::GraphContext,
         node::{
-            gfx_acquire_barriers, gfx_release_barriers, is_metal,
+            gfx_acquire_barriers, gfx_release_barriers, is_metal, is_gl,
             render::group::{RenderGroup, RenderGroupBuilder},
             BufferAccess, DynNode, ImageAccess, NodeBuffer, NodeBuilder, NodeImage,
         },
@@ -641,7 +641,7 @@ where
 
         let command_cirque = CommandCirque::new();
 
-        let acquire = if !is_metal::<B>() {
+        let acquire = if !is_metal::<B>() && !is_gl::<B>() {
             let (stages, barriers) = gfx_acquire_barriers(ctx, &buffers, &images);
 
             if !barriers.is_empty() {
@@ -667,7 +667,7 @@ where
             None
         };
 
-        let release = if !is_metal::<B>() {
+        let release = if !is_metal::<B>() && !is_gl::<B>() {
             let (stages, barriers) = gfx_release_barriers(ctx, &buffers, &images);
 
             if !barriers.is_empty() {

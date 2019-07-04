@@ -9,10 +9,7 @@ use {
         memory::{self, Heaps, MemoryUsage, TotalMemoryUtilization, Write},
         resource::*,
         upload::{BufferState, ImageState, ImageStateOrLayout, Uploader},
-        util::{
-            identical_cast, rendy_backend_match, rendy_with_slow_safety_checks, Device, DeviceId,
-            Instance,
-        },
+        util::{rendy_with_gl_backend, rendy_with_slow_safety_checks, Device, DeviceId, Instance},
         wsi::{Surface, Target},
     },
     gfx_hal::{
@@ -1004,6 +1001,15 @@ where
     }
 }
 
+rendy_with_gl_backend! {
+    impl Factory<rendy_util::gl::Backend> {
+        /// Wrap raw GL surface.
+        pub unsafe fn wrap_surface(&self, surface: rendy_util::gl::Surface) -> Surface<rendy_util::gl::Backend> {
+            Surface::from_raw(surface, self.instance.id())
+        }
+    }
+}
+
 impl<B> std::ops::Deref for Factory<B>
 where
     B: Backend,
@@ -1016,19 +1022,41 @@ where
 }
 
 /// Initialize `Factory` and Queue `Families` associated with Device.
-#[allow(unused_variables)]
+#[allow(unused)]
 pub fn init<B>(
     config: Config<impl DevicesConfigure, impl HeapsConfigure, impl QueuesConfigure>,
 ) -> Result<(Factory<B>, Families<B>), failure::Error>
 where
     B: Backend,
 {
+    use crate::util::{identical_cast, rendy_backend_match};
+
     log::debug!("Creating factory");
-    rendy_backend_match!(B as backend => {
-        profile_scope!(concat!("init_factory"));
-        let instance = backend::Instance::create("Rendy", 1);
-        Ok(identical_cast(init_with_instance(instance, config)?))
-    });
+    rendy_backend_match!(B {
+        empty => {
+            profile_scope!(concat!("init_factory"));
+            let instance = rendy_util::empty::Instance::create("Rendy", 1);
+            Ok(identical_cast(init_with_instance(instance, config)?))
+        }
+        dx12 => {
+            profile_scope!(concat!("init_factory"));
+            let instance = rendy_util::dx12::Instance::create("Rendy", 1);
+            Ok(identical_cast(init_with_instance(instance, config)?))
+        }
+        gl => {
+            panic!("This function does not support GL backend. Use `init_with_instance` instead.");
+        }
+        metal => {
+            profile_scope!(concat!("init_factory"));
+            let instance = rendy_util::metal::Instance::create("Rendy", 1);
+            Ok(identical_cast(init_with_instance(instance, config)?))
+        }
+        vulkan => {
+            profile_scope!(concat!("init_factory"));
+            let instance = rendy_util::vulkan::Instance::create("Rendy", 1);
+            Ok(identical_cast(init_with_instance(instance, config)?))
+        }
+    })
 }
 
 /// Initialize `Factory` and Queue `Families` associated with Device

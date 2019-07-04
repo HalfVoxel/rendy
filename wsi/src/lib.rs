@@ -16,8 +16,8 @@ use {
     rendy_resource::{Image, ImageInfo},
     rendy_util::{
         device_owned, instance_owned, rendy_with_dx12_backend, rendy_with_empty_backend,
-        rendy_with_metal_backend, rendy_with_vulkan_backend, Device, DeviceId, Instance,
-        InstanceId,
+        rendy_with_gl_backend, rendy_with_metal_backend, rendy_with_vulkan_backend, Device,
+        DeviceId, Instance, InstanceId,
     },
 };
 
@@ -47,6 +47,18 @@ rendy_with_dx12_backend! {
             window: &winit::Window,
         ) -> <rendy_util::dx12::Backend as gfx_hal::Backend>::Surface {
             instance.create_surface(window)
+        }
+    }
+}
+
+rendy_with_gl_backend! {
+    mod gfx_backend_gl {
+        #[cfg(feature = "winit")]
+        pub(super) fn create_surface(
+            _instance: &rendy_util::gl::Surface,
+            _window: &winit::Window,
+        ) -> <rendy_util::gl::Backend as gfx_hal::Backend>::Surface {
+            panic!("This functional is unavailable with gl backend.");
         }
     }
 }
@@ -88,6 +100,9 @@ fn create_surface<B: Backend>(instance: &Instance<B>, window: &winit::Window) ->
         dx12 => {
             identical_cast(gfx_backend_dx12::create_surface(instance.raw_typed().unwrap(), window))
         }
+        gl => {
+            identical_cast(gfx_backend_gl::create_surface(instance.raw_typed().unwrap(), window))
+        }
         metal => {
             identical_cast(gfx_backend_metal::create_surface(instance.raw_typed().unwrap(), window))
         }
@@ -120,6 +135,13 @@ impl<B> Surface<B>
 where
     B: Backend,
 {
+    /// Create surface from raw parts.
+    /// This is most useful for gl backend where `Surface` **is** `Instance`
+    /// and must be created prior anything else.
+    pub unsafe fn from_raw(raw: B::Surface, instance: InstanceId) -> Self {
+        Surface { raw, instance }
+    }
+
     /// Create surface for the window.
     #[cfg(feature = "winit")]
     pub fn new(instance: &Instance<B>, window: &winit::Window) -> Self {
@@ -295,7 +317,9 @@ unsafe fn create_swapchain<B: Backend>(
 
     assert!(
         capabilities.usage.contains(usage),
-        "Surface supports {:?}, but {:?} was requested"
+        "Surface supports {:?}, but {:?} was requested",
+        capabilities.usage,
+        usage,
     );
 
     let extent = capabilities.current_extent.unwrap_or(suggest_extent);

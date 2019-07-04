@@ -20,6 +20,7 @@ serde-1 = ["serde", "gfx-hal/serde"]
 # `cfg` attributes.
 empty = ["gfx-backend-empty"]
 dx12 = ["gfx-backend-dx12"]
+gl = ["gfx-backend-gl"]
 metal = ["gfx-backend-metal"]
 vulkan = ["gfx-backend-vulkan"]
 no-slow-safety-checks = []
@@ -28,6 +29,7 @@ no-slow-safety-checks = []
 gfx-hal = "0.2"
 gfx-backend-empty = { version = "0.2", optional = true }
 gfx-backend-dx12 = { version = "0.2", optional = true }
+gfx-backend-gl = { version = "0.2", optional = true }
 gfx-backend-metal = { version = "0.2", optional = true }
 gfx-backend-vulkan = { version = "0.2", optional = true }
 derivative = "1.0"
